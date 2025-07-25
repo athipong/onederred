@@ -1,8 +1,8 @@
 // ✅ Firebase config → ใส่ของแป๊บจาก Firebase Console
 const firebaseConfig = {
-  apiKey: "PAEP-APIKEY-HERE",
-  authDomain: "YOURAPP.firebaseapp.com",
-  projectId: "YOURAPP",
+  apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+  authDomain: "Ytb-git.firebaseapp.com",
+  projectId: "tb-git",
 };
 
 // ✅ Initialize Firebase
