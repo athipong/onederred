@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+
+  <!-- ✅ Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
+    input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
+    .record { border-bottom: 1px solid #ccc; padding: 5px 0; }
+  </style>
+</head>
+<body>
+  <h2>📋 บันทึกรายจ่าย</h2>
+  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)" />
+  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร" />
+  <button onclick="addExpense()">บันทึก</button>
+
+  <h3>📌 รายการล่าสุด</h3>
+  <div id="expenseList"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
