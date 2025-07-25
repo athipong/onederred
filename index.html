@@ -21,69 +21,40 @@
 
   <!-- ✅ Firebase v10+ via Module -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      orderBy,
-      limit
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
-      authDomain: "tb-git.firebaseapp.com",
-      projectId: "tb-git",
-      storageBucket: "tb-git.firebasestorage.app",
-      messagingSenderId: "311209997293",
-      appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
-      measurementId: "G-FSSQZM86HR"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+  authDomain: "tb-git.firebaseapp.com",
+  projectId: "tb-git",
+  storageBucket: "tb-git.firebasestorage.app",
+  messagingSenderId: "311209997293",
+  appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
+  measurementId: "G-FSSQZM86HR"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    // ✅ เพิ่มรายจ่าย
-    window.addExpense = async function () {
-      const amount = parseInt(document.getElementById('amount').value);
-      const category = document.getElementById('category').value;
+// ✅ addExpense ต้องอยู่ใน window เพื่อให้เรียกได้ภายนอก
+window.addExpense = async function () {
+  const amount = parseInt(document.getElementById('amount').value);
+  const category = document.getElementById('category').value;
+  if (!amount || !category) return alert("กรุณากรอกให้ครบ");
 
-      if (!amount || !category) return alert("กรุณากรอกให้ครบ");
+  await addDoc(collection(db, "expenses"), {
+    amount,
+    category,
+    date: new Date().toISOString()
+  });
 
-      await addDoc(collection(db, "expenses"), {
-        amount,
-        category,
-        date: new Date().toISOString()
-      });
+  alert("บันทึกสำเร็จ");
+};
 
-      alert("บันทึกสำเร็จ");
-      document.getElementById("amount").value = "";
-      document.getElementById("category").value = "";
-      loadExpenses();
-    };
+// ✅ จับปุ่มคลิก
+document.getElementById("saveBtn").addEventListener("click", addExpense);
+</script>
 
-    // ✅ โหลดรายการ
-    window.loadExpenses = async function () {
-      const list = document.getElementById("expenseList");
-      list.innerHTML = "";
-
-      const q = query(collection(db, "expenses"), orderBy("date", "desc"), limit(10));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        list.innerHTML += `
-          <div class="record">
-            <strong>${data.amount}฿</strong> - ${data.category}<br>
-            <small>${new Date(data.date).toLocaleString()}</small>
-          </div>
-        `;
-      });
-    };
-
-    // ✅ เรียกตอนเปิดหน้า
-    window.onload = loadExpenses;
-  </script>
 </body>
 </html>
