@@ -111,6 +111,10 @@ onAuthStateChanged(auth, user => {
     list.innerHTML = '';
     total.textContent = '0';
     currentUser = null;
+    document.getElementById('signin').addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    });
   }
 });
 
