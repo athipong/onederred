@@ -5,46 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense Tracker</title>
 
- <!-- Firebase App -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<!-- Firestore -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
-
-<script>
-  // ✅ Config ของแป๊บ
-  const firebaseConfig = {
-    apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
-    authDomain: "tb-git.firebaseapp.com",
-    projectId: "tb-git",
-    storageBucket: "tb-git.firebasestorage.app",
-    messagingSenderId: "311209997293",
-    appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
-    measurementId: "G-FSSQZM86HR"
-  };
-
-  // ✅ เริ่มต้น Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  // ✅ ตัวอย่างฟังก์ชันเพิ่มข้อมูล
-  function addExpense() {
-    const amount = parseInt(document.getElementById("amount").value);
-    const category = document.getElementById("category").value;
-
-    db.collection("expenses").add({
-      amount,
-      category,
-      date: new Date().toISOString()
-    }).then(() => {
-      alert("บันทึกสำเร็จ");
-    });
-  }
-</script>
+  <!-- ✅ Firebase SDK via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
-    input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
-    .record { border-bottom: 1px solid #ccc; padding: 5px 0; }
+    body {
+      font-family: sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 2rem;
+    }
+    input, button {
+      display: block;
+      margin: 10px 0;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .record {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+    }
+    .record strong {
+      font-size: 18px;
+    }
+    h2, h3 {
+      margin-top: 1.5rem;
+    }
   </style>
 </head>
 <body>
@@ -56,6 +44,67 @@
   <h3>📌 รายการล่าสุด</h3>
   <div id="expenseList"></div>
 
-  <!-- <script src="script.js"></script> -->
+  <script>
+    // ✅ Firebase config ของแป๊บ
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+      authDomain: "tb-git.firebaseapp.com",
+      projectId: "tb-git",
+      storageBucket: "tb-git.firebasestorage.app",
+      messagingSenderId: "311209997293",
+      appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
+      measurementId: "G-FSSQZM86HR"
+    };
+
+    // ✅ เริ่มต้น Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ✅ ฟังก์ชันเพิ่มรายการ
+    function addExpense() {
+      const amount = parseInt(document.getElementById("amount").value);
+      const category = document.getElementById("category").value;
+
+      if (!amount || !category) {
+        alert("กรุณากรอกให้ครบ");
+        return;
+      }
+
+      db.collection("expenses").add({
+        amount,
+        category,
+        date: new Date().toISOString()
+      }).then(() => {
+        alert("บันทึกสำเร็จ");
+        document.getElementById("amount").value = "";
+        document.getElementById("category").value = "";
+        loadExpenses(); // โหลดใหม่หลังบันทึก
+      });
+    }
+
+    // ✅ ฟังก์ชันโหลดรายการล่าสุด
+    function loadExpenses() {
+      db.collection("expenses")
+        .orderBy("date", "desc")
+        .limit(10)
+        .get()
+        .then(snapshot => {
+          const list = document.getElementById("expenseList");
+          list.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            list.innerHTML += `
+              <div class="record">
+                <strong>${data.amount}฿</strong> - ${data.category}<br/>
+                <small>${new Date(data.date).toLocaleString()}</small>
+              </div>
+            `;
+          });
+        });
+    }
+
+    // ✅ โหลดข้อมูลเมื่อเปิดเว็บ
+    window.onload = loadExpenses;
+  </script>
 </body>
 </html>
