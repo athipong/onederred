@@ -4,11 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense Tracker</title>
-
-  <!-- ✅ Firebase SDK via CDN -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
-
   <style>
     body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
     input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
@@ -17,15 +12,26 @@
 </head>
 <body>
   <h2>📋 บันทึกรายจ่าย</h2>
-  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)">
-  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร">
+  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)" />
+  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร" />
   <button onclick="addExpense()">บันทึก</button>
 
   <h3>📌 รายการล่าสุด</h3>
   <div id="expenseList"></div>
 
-  <script>
-    // ✅ ใช้ firebaseConfig ของแป๊บ
+  <!-- ✅ Firebase v10+ via Module -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy,
+      limit
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
       authDomain: "tb-git.firebaseapp.com",
@@ -36,51 +42,47 @@
       measurementId: "G-FSSQZM86HR"
     };
 
-    // ✅ เริ่มต้น Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // ✅ เพิ่มข้อมูล
-    function addExpense() {
+    // ✅ เพิ่มรายจ่าย
+    window.addExpense = async function () {
       const amount = parseInt(document.getElementById('amount').value);
       const category = document.getElementById('category').value;
 
-      if (!amount || !category) return alert("กรอกให้ครบ");
+      if (!amount || !category) return alert("กรุณากรอกให้ครบ");
 
-      db.collection("expenses").add({
+      await addDoc(collection(db, "expenses"), {
         amount,
         category,
         date: new Date().toISOString()
-      }).then(() => {
-        alert("บันทึกสำเร็จ");
-        document.getElementById("amount").value = "";
-        document.getElementById("category").value = "";
-        loadExpenses(); // โหลดใหม่
       });
-    }
 
-    // ✅ โหลดรายการล่าสุด
-    function loadExpenses() {
-      db.collection("expenses")
-        .orderBy("date", "desc")
-        .limit(10)
-        .get()
-        .then(snapshot => {
-          const list = document.getElementById("expenseList");
-          list.innerHTML = "";
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            list.innerHTML += `
-              <div class="record">
-                <strong>${data.amount}฿</strong> - ${data.category}<br>
-                <small>${new Date(data.date).toLocaleString()}</small>
-              </div>
-            `;
-          });
-        });
-    }
+      alert("บันทึกสำเร็จ");
+      document.getElementById("amount").value = "";
+      document.getElementById("category").value = "";
+      loadExpenses();
+    };
 
-    // ✅ โหลดอัตโนมัติเมื่อเปิดเว็บ
+    // ✅ โหลดรายการ
+    window.loadExpenses = async function () {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+
+      const q = query(collection(db, "expenses"), orderBy("date", "desc"), limit(10));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        list.innerHTML += `
+          <div class="record">
+            <strong>${data.amount}฿</strong> - ${data.category}<br>
+            <small>${new Date(data.date).toLocaleString()}</small>
+          </div>
+        `;
+      });
+    };
+
+    // ✅ เรียกตอนเปิดหน้า
     window.onload = loadExpenses;
   </script>
 </body>
