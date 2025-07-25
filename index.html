@@ -2,57 +2,37 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Expense Tracker</title>
+  <title>Income Expense Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
-    input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
-    .record { border-bottom: 1px solid #ccc; padding: 10px 0; }
+    input, button, select { display: block; margin: 10px 0; width: 100%; padding: 8px; }
+    .record { border-bottom: 1px solid #ccc; padding: 8px 0; }
   </style>
 </head>
 <body>
-  <h2>📋 บันทึกรายจ่าย</h2>
-  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)">
-  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร">
-  <button id="saveBtn">บันทึก</button>
+  <h2>รายรับรายจ่าย</h2>
+  <button id="loginBtn">🔑 Login ด้วย Facebook</button>
 
-  <h3>📌 รายการล่าสุด</h3>
-  <div id="expenseList"></div>
+  <div id="formSection" style="display:none;">
+    <h4>เพิ่มรายการ</h4>
+    <select id="type">
+      <option value="income">รายรับ</option>
+      <option value="expense">รายจ่าย</option>
+    </select>
+    <input id="amount" type="number" placeholder="จำนวนเงิน" />
+    <input id="category" type="text" placeholder="ประเภท (เช่น food, salary)" />
+    <input id="note" type="text" placeholder="หมายเหตุ (ไม่จำเป็น)" />
+    <input id="date" type="date" />
+    <button onclick="addTransaction()">💾 บันทึก</button>
 
-  <!-- ✅ ย้าย script มาไว้ที่ล่างสุด -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    <h4>รายการล่าสุด</h4>
+    <div id="records"></div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
-      authDomain: "tb-git.firebaseapp.com",
-      projectId: "tb-git",
-      storageBucket: "tb-git.firebasestorage.app",
-      messagingSenderId: "311209997293",
-      appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
-      measurementId: "G-FSSQZM86HR"
-    };
+    <h4>สรุปแบบกราฟ</h4>
+    <canvas id="chart" height="200"></canvas>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function addExpense() {
-      const amount = parseInt(document.getElementById('amount').value);
-      const category = document.getElementById('category').value;
-      if (!amount || !category) return alert("กรุณากรอกให้ครบ");
-
-      await addDoc(collection(db, "expenses"), {
-        amount,
-        category,
-        date: new Date().toISOString()
-      });
-
-      alert("บันทึกสำเร็จ");
-    }
-
-    // ✅ ตอนนี้ saveBtn ถูกโหลดแล้ว
-    document.getElementById("saveBtn").addEventListener("click", addExpense);
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
