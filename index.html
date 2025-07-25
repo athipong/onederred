@@ -12,46 +12,47 @@
 </head>
 <body>
   <h2>📋 บันทึกรายจ่าย</h2>
-  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)" />
-  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร" />
- <button id="saveBtn">บันทึก</button>
+  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)">
+  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร">
+  <button id="saveBtn">บันทึก</button>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <h3>📌 รายการล่าสุด</h3>
+  <div id="expenseList"></div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
-  authDomain: "tb-git.firebaseapp.com",
-  projectId: "tb-git",
-  storageBucket: "tb-git.firebasestorage.app",
-  messagingSenderId: "311209997293",
-  appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
-  measurementId: "G-FSSQZM86HR"
-};
+  <!-- ✅ ย้าย script มาไว้ที่ล่างสุด -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+      authDomain: "tb-git.firebaseapp.com",
+      projectId: "tb-git",
+      storageBucket: "tb-git.firebasestorage.app",
+      messagingSenderId: "311209997293",
+      appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
+      measurementId: "G-FSSQZM86HR"
+    };
 
-async function addExpense() {
-  const amount = parseInt(document.getElementById('amount').value);
-  const category = document.getElementById('category').value;
-  if (!amount || !category) return alert("กรอกให้ครบ");
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  await addDoc(collection(db, "expenses"), {
-    amount,
-    category,
-    date: new Date().toISOString()
-  });
+    async function addExpense() {
+      const amount = parseInt(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      if (!amount || !category) return alert("กรุณากรอกให้ครบ");
 
-  alert("บันทึกสำเร็จ");
-}
+      await addDoc(collection(db, "expenses"), {
+        amount,
+        category,
+        date: new Date().toISOString()
+      });
 
-// ✅ จับปุ่มหลังโหลด DOM เสร็จ
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("saveBtn").addEventListener("click", addExpense);
-});
-</script>
+      alert("บันทึกสำเร็จ");
+    }
 
+    // ✅ ตอนนี้ saveBtn ถูกโหลดแล้ว
+    document.getElementById("saveBtn").addEventListener("click", addExpense);
+  </script>
 </body>
 </html>
