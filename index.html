@@ -14,13 +14,9 @@
   <h2>📋 บันทึกรายจ่าย</h2>
   <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)" />
   <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร" />
-  <button onclick="addExpense()">บันทึก</button>
+ <button id="saveBtn">บันทึก</button>
 
-  <h3>📌 รายการล่าสุด</h3>
-  <div id="expenseList"></div>
-
-  <!-- ✅ Firebase v10+ via Module -->
-  <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -37,11 +33,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ✅ addExpense ต้องอยู่ใน window เพื่อให้เรียกได้ภายนอก
-window.addExpense = async function () {
+async function addExpense() {
   const amount = parseInt(document.getElementById('amount').value);
   const category = document.getElementById('category').value;
-  if (!amount || !category) return alert("กรุณากรอกให้ครบ");
+  if (!amount || !category) return alert("กรอกให้ครบ");
 
   await addDoc(collection(db, "expenses"), {
     amount,
@@ -50,10 +45,12 @@ window.addExpense = async function () {
   });
 
   alert("บันทึกสำเร็จ");
-};
+}
 
-// ✅ จับปุ่มคลิก
-document.getElementById("saveBtn").addEventListener("click", addExpense);
+// ✅ จับปุ่มหลังโหลด DOM เสร็จ
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("saveBtn").addEventListener("click", addExpense);
+});
 </script>
 
 </body>
