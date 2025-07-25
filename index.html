@@ -1,62 +1,87 @@
-<!-- ✅ Firebase SDK via CDN -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
 
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
-    authDomain: "tb-git.firebaseapp.com",
-    projectId: "tb-git",
-    storageBucket: "tb-git.firebasestorage.app",
-    messagingSenderId: "311209997293",
-    appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
-    measurementId: "G-FSSQZM86HR"
-  };
+  <!-- ✅ Firebase SDK via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 
-  // ✅ ใช้ CDN ต้องใช้ namespace `firebase` แบบนี้
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
+    input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
+    .record { border-bottom: 1px solid #ccc; padding: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>📋 บันทึกรายจ่าย</h2>
+  <input id="amount" type="number" placeholder="จำนวนเงิน (บาท)">
+  <input id="category" type="text" placeholder="หมวดหมู่ เช่น อาหาร">
+  <button onclick="addExpense()">บันทึก</button>
 
-  function addExpense() {
-    const amount = parseInt(document.getElementById("amount").value);
-    const category = document.getElementById("category").value;
+  <h3>📌 รายการล่าสุด</h3>
+  <div id="expenseList"></div>
 
-    if (!amount || !category) {
-      alert("กรุณากรอกให้ครบ");
-      return;
+  <script>
+    // ✅ ใช้ firebaseConfig ของแป๊บ
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+      authDomain: "tb-git.firebaseapp.com",
+      projectId: "tb-git",
+      storageBucket: "tb-git.firebasestorage.app",
+      messagingSenderId: "311209997293",
+      appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
+      measurementId: "G-FSSQZM86HR"
+    };
+
+    // ✅ เริ่มต้น Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ✅ เพิ่มข้อมูล
+    function addExpense() {
+      const amount = parseInt(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+
+      if (!amount || !category) return alert("กรอกให้ครบ");
+
+      db.collection("expenses").add({
+        amount,
+        category,
+        date: new Date().toISOString()
+      }).then(() => {
+        alert("บันทึกสำเร็จ");
+        document.getElementById("amount").value = "";
+        document.getElementById("category").value = "";
+        loadExpenses(); // โหลดใหม่
+      });
     }
 
-    db.collection("expenses").add({
-      amount,
-      category,
-      date: new Date().toISOString()
-    }).then(() => {
-      alert("บันทึกสำเร็จ");
-      document.getElementById("amount").value = "";
-      document.getElementById("category").value = "";
-      loadExpenses();
-    });
-  }
-
-  function loadExpenses() {
-    db.collection("expenses")
-      .orderBy("date", "desc")
-      .limit(10)
-      .get()
-      .then(snapshot => {
-        const list = document.getElementById("expenseList");
-        list.innerHTML = "";
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          list.innerHTML += `
-            <div class="record">
-              <strong>${data.amount}฿</strong> - ${data.category}<br/>
-              <small>${new Date(data.date).toLocaleString()}</small>
-            </div>
-          `;
+    // ✅ โหลดรายการล่าสุด
+    function loadExpenses() {
+      db.collection("expenses")
+        .orderBy("date", "desc")
+        .limit(10)
+        .get()
+        .then(snapshot => {
+          const list = document.getElementById("expenseList");
+          list.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            list.innerHTML += `
+              <div class="record">
+                <strong>${data.amount}฿</strong> - ${data.category}<br>
+                <small>${new Date(data.date).toLocaleString()}</small>
+              </div>
+            `;
+          });
         });
-      });
-  }
+    }
 
-  window.onload = loadExpenses;
-</script>
+    // ✅ โหลดอัตโนมัติเมื่อเปิดเว็บ
+    window.onload = loadExpenses;
+  </script>
+</body>
+</html>
