@@ -1,38 +1,248 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <title>Income Expense Tracker</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายรับรายจ่าย (PWA)</title>
+  <link rel="manifest" href="manifest.json">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 2rem; }
-    input, button, select { display: block; margin: 10px 0; width: 100%; padding: 8px; }
-    .record { border-bottom: 1px solid #ccc; padding: 8px 0; }
+    body { background: #f5f7fb; padding-top: 2rem; }
+    .income { color: green; }
+    .expense { color: red; }
+    #list li:hover { background-color: #eef; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h2>รายรับรายจ่าย11</h2>
-  <button id="loginBtn">🔑 Login ด้วย Facebook</button>
-
-  <div id="formSection" style="display:none;">
-    <h4>เพิ่มรายการ</h4>
-    <select id="type">
-      <option value="income">รายรับ</option>
-      <option value="expense">รายจ่าย</option>
-    </select>
-    <input id="amount" type="number" placeholder="จำนวนเงิน" />
-    <input id="category" type="text" placeholder="ประเภท (เช่น food, salary)" />
-    <input id="note" type="text" placeholder="หมายเหตุ (ไม่จำเป็น)" />
-    <input id="date" type="date" />
-    <button onclick="addTransaction()">💾 บันทึก</button>
-
-    <h4>รายการล่าสุด</h4>
-    <div id="records"></div>
-
-    <h4>สรุปแบบกราฟ</h4>
-    <canvas id="chart" height="200"></canvas>
+<div class="container py-4">
+  <h2 class="text-center mb-4">📊 ระบบรายรับรายจ่าย (PWA)</h2>
+  <div class="text-end mb-3" id="user-info">
+    <button class="btn btn-primary" id="signin">เข้าสู่ระบบด้วย Google</button>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <form id="form" class="card p-3 shadow-sm mb-4">
+    <div class="row g-2">
+      <div class="col-md-4"><input type="text" id="description" class="form-control" placeholder="รายละเอียด" required></div>
+      <div class="col-md-2"><input type="number" id="amount" class="form-control" placeholder="จำนวนเงิน" required></div>
+      <div class="col-md-3">
+        <select id="category" class="form-select" required>
+          <option value="💼 เงินเดือน">💼 เงินเดือน</option>
+          <option value="🎁 รายได้พิเศษ">🎁 รายได้พิเศษ</option>
+          <option value="🍔 อาหาร">🍔 อาหาร</option>
+          <option value="🚕 เดินทาง">🚕 เดินทาง</option>
+          <option value="🏠 ค่าเช่า">🏠 ค่าเช่า</option>
+          <option value="🎮 บันเทิง">🎮 บันเทิง</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-success w-100">บันทึก</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card p-3 shadow-sm mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">📋 รายการทั้งหมด</h5>
+      <div>
+        <button class="btn btn-outline-secondary btn-sm me-2" id="exportBtn">📤 Export</button>
+        <input type="file" id="importInput" style="display:none">
+        <button class="btn btn-outline-primary btn-sm" id="importBtn">📥 Import</button>
+      </div>
+    </div>
+    <ul class="list-group my-3" id="list"></ul>
+    <h5 class="text-end">รวมสุทธิ: <span id="total">0</span> บาท</h5>
+  </div>
+
+  <div class="card p-4 shadow-sm">
+    <h5>📈 รายรับ/รายจ่าย รายเดือน</h5>
+    <canvas id="chart" height="120"></canvas>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, setDoc, getDocs, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCKuK-XsRn1kpreS210wqP_uoiwUANQ5r8",
+  authDomain: "tb-git.firebaseapp.com",
+  projectId: "tb-git",
+  storageBucket: "tb-git.firebasestorage.app",
+  messagingSenderId: "311209997293",
+  appId: "1:311209997293:web:90aaaea62c2a4f80d6ede4",
+  measurementId: "G-FSSQZM86HR"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let editingId = null;
+
+const signInBtn = document.getElementById('signin');
+const userInfo = document.getElementById('user-info');
+const form = document.getElementById('form');
+const list = document.getElementById('list');
+const total = document.getElementById('total');
+const chartCanvas = document.getElementById('chart');
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importInput = document.getElementById('importInput');
+
+signInBtn.addEventListener('click', async () => {
+  const provider = new GoogleAuthProvider();
+  await signInWithPopup(auth, provider);
+});
+
+userInfo.addEventListener('click', e => {
+  if (e.target.id === 'signout') signOut(auth);
+});
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    userInfo.innerHTML = `👤 ${user.displayName} <button class="btn btn-sm btn-outline-danger ms-2" id="signout">ออกจากระบบ</button>`;
+    loadTransactions();
+  } else {
+    userInfo.innerHTML = `<button class="btn btn-primary" id="signin">เข้าสู่ระบบด้วย Google</button>`;
+    list.innerHTML = '';
+    total.textContent = '0';
+    currentUser = null;
+  }
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const desc = form.description.value;
+  const amt = parseFloat(form.amount.value);
+  const cat = form.category.value;
+  if (!desc || isNaN(amt) || !cat || !currentUser) return;
+
+  const data = {
+    userId: currentUser.uid,
+    description: desc,
+    amount: amt,
+    category: cat,
+    date: serverTimestamp()
+  };
+
+  if (editingId) {
+    await setDoc(doc(db, "transactions", editingId), data);
+    editingId = null;
+  } else {
+    await addDoc(collection(db, "transactions"), data);
+  }
+  form.reset();
+});
+
+function loadTransactions() {
+  const q = query(
+    collection(db, "transactions"),
+    where("userId", "==", currentUser.uid),
+    orderBy("date", "desc")
+  );
+
+  onSnapshot(q, snapshot => {
+    let sum = 0;
+    list.innerHTML = '';
+    const chartData = {};
+    snapshot.forEach(docSnap => {
+      const tx = docSnap.data();
+      const id = docSnap.id;
+      const date = tx.date?.toDate?.() || new Date();
+      const month = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+      if (!chartData[month]) chartData[month] = { income: 0, expense: 0 };
+      if (tx.amount >= 0) chartData[month].income += tx.amount;
+      else chartData[month].expense += Math.abs(tx.amount);
+
+      sum += tx.amount;
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between';
+      li.innerHTML = `
+        <div>
+          <strong>${tx.description}</strong> (${tx.category})
+          <br><small class="text-muted">${date.toLocaleString()}</small>
+        </div>
+        <div class="text-end">
+          <span class="${tx.amount < 0 ? 'expense' : 'income'}">${tx.amount > 0 ? '+' : '-'}${Math.abs(tx.amount)} บาท</span><br>
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="editTx('${id}')">✏️</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTx('${id}')">🗑</button>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+    total.textContent = sum.toLocaleString();
+    renderChart(chartData);
+  });
+}
+
+window.editTx = async (id) => {
+  const snap = await getDocs(query(collection(db, "transactions"), where("userId", "==", currentUser.uid)));
+  snap.forEach(docSnap => {
+    if (docSnap.id === id) {
+      const tx = docSnap.data();
+      form.description.value = tx.description;
+      form.amount.value = Math.abs(tx.amount);
+      form.category.value = tx.category;
+      editingId = id;
+    }
+  });
+};
+
+window.deleteTx = async (id) => {
+  if (confirm("ลบรายการนี้?")) await deleteDoc(doc(db, "transactions", id));
+};
+
+function renderChart(data) {
+  const labels = Object.keys(data).sort();
+  const income = labels.map(k => data[k].income);
+  const expense = labels.map(k => data[k].expense);
+  if (window.chartInstance) window.chartInstance.destroy();
+  window.chartInstance = new Chart(chartCanvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'รายรับ', data: income, backgroundColor: 'green' },
+        { label: 'รายจ่าย', data: expense, backgroundColor: 'red' }
+      ]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+exportBtn.addEventListener('click', async () => {
+  const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid));
+  const snapshot = await getDocs(q);
+  const data = snapshot.docs.map(d => d.data());
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transactions.json';
+  a.click();
+});
+
+importBtn.addEventListener('click', () => importInput.click());
+importInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const data = JSON.parse(text);
+  for (const tx of data) {
+    tx.userId = currentUser.uid;
+    tx.date = serverTimestamp();
+    await addDoc(collection(db, "transactions"), tx);
+  }
+});
+
+// ✅ PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
 </body>
 </html>
